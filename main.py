@@ -17,40 +17,62 @@ if __name__ == '__main__':
     from ui import UI
     from wordle import Wordle
 
-    print(f"Debug: {config.DEBUG}")
-
     ui = UI()
     game = Wordle("word_list.txt")
 
-    print(f"\n\t{Fore.GREEN}start{Fore.RESET} - start a new game\n\t{Fore.RED}exit{Fore.RESET} - exit the program\n")
-
     while True:
         ui.clear()
+        print(f"\n\t{Fore.GREEN}start{Fore.RESET} <word length> - start a new game"
+              f"\n\t{Fore.RED}exit{Fore.RESET} - exit the program\n")
 
-        command = input("PyWordle > ").lower()
+        command = input("PyWordle > ").strip().split()
 
-        if command == "exit": break
-        if command == "start":
-            length = int(input("Enter the length of the word: "))
-            game.start(length)
+        # Instruction processing
+        if command[0].lower() == "exit": break
+        if command[0].lower() == "start":
+            try:
+                length = int(command[1])
+            except IndexError:
+                length = int(input("Enter the length of the word > "))
+
+            current_word = game.start(length)
+
+            if current_word is None:
+                continue
+
+            # Build the UI
             ui.set_word_length(length)
+            ui.build_empty_table(f"Start the game.",
+                                 f"{Fore.CYAN}[Command]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - exit the game.")
 
-            print(f"\n\t{Fore.RED}/exit{Fore.RESET} - exit the game\n")
+            # debug: Get the current word.
+            ui.print_debug(f"The current word is {Fore.GREEN + current_word + Fore.RESET}")
 
+            # Start the game
             while game.get_opportunity() > 0 and game.get_is_win() is False:
-                word = input(f"Enter your guess: ")
+                word = game.input()
 
+                # Instruction processing
                 if word == "/exit":
                     break
 
                 result = game.check(word)
 
+                # Exception handling
+                if result == 404:
+                    ui.print_info(f"The word {Fore.RED}is not{Fore.RESET} in the {Fore.RED}word list{Fore.RESET}.")
+                    continue
+                elif result == 416:
+                    ui.print_info(f"The word {Fore.RED}must be the same length{Fore.RESET} as the current word.")
+                    continue
+
+                # If the word is correct, add .
                 if result is not None:
                     game.deduction_opportunity(1)
                     ui.insert(result)
-                    ui.print()
 
+            # Game over
             if game.get_is_win():
-                print(f"\n\t{Fore.GREEN}You won!{Fore.RESET} The word was {game.current_word}!\n")
+                ui.print_info(f"{Fore.GREEN}You won the game!{Fore.RESET} The word was '{current_word}'.")
             else:
-                print(f"\n\t{Fore.RED}You lost.{Fore.RESET} The word was {game.current_word}!\n")
+                ui.print_info(f"{Fore.RED}You lost the game.{Fore.RESET} The word was '{current_word}'.")

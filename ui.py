@@ -1,4 +1,7 @@
 from colorama import *
+from utils import clear_console, rewrite_lines
+
+import config
 
 
 class UI:
@@ -19,6 +22,12 @@ class UI:
         self.length = length
         self.number = length + 1
 
+    def get_length(self):
+        return self.length
+
+    def get_number(self):
+        return self.number
+
     def clear(self):
         """Clears the list of words, resetting it to an empty state."""
         self.words = []
@@ -34,28 +43,77 @@ class UI:
         """
         if len(word) == self.length:
             self.words.append(word)
+            self.__rewrite_table(len(self.words), word)
 
-    def print(self):
+    def build_empty_table(self, info: str, other_msg: str):
         """
-        Print the words to the console.
-        This will print only the first 'number' words from the 'words' list.
-        If there are fewer words, empty words will be added.
+        Constructs and displays an empty table structure on the console.
+
+        This function clears the console and generates a visual representation
+        of an empty table based on the specified word length. Each "cell" of
+        the table is represented by a box-drawing character. It also prints
+        additional informational and other messages below the table.
+
+        Args:
+            info (str): The informational message to display after the table.
+            other_msg (str): An additional message to display after the informational
+                             message.
         """
-        # Only process the first 'number' words from the list
-        words_to_print = self.words[:self.number]
+        clear_console()
+        empty_words = [[{" ": Fore.RESET} for _ in range(self.length)] for _ in range(self.number)]
 
-        # Add empty words until the number of words reaches 'number'
-        if len(self.words) < self.number:
-            words_to_print += self.__get_empty_words(self.number - len(self.words))
-
-        # Print each word (each word in a separate line)
         print()
-        for word in words_to_print:
+        for word in empty_words:
             rows = self.__build_rows(word)
             for row in rows:
                 print(row)
 
-        print()
+        print(f"\n{Fore.CYAN}[INFO]{Fore.RESET} " + info)
+        print(f"{other_msg}")
+        print(f"{Fore.RED}[DEBUG]{Fore.RESET} " + f"Debug mode is {config.DEBUG}")
+
+    def print_info(self, info: str):
+        """
+        Prints an information message on a specific line on the console.
+
+        The message is printed on the line below the debug message line.
+        The line number is calculated based on the number of words in the table.
+
+        Args:
+            info (str): The message to be printed.
+        """
+        info_line = 3 + 3 * self.number
+
+        rewrite_lines(info_line, info_line, [f"{Fore.CYAN}[INFO]{Fore.RESET} " + info])
+
+    def print_other_msg(self, other_msg: str):
+        """
+        Prints a message on a specific line on the console.
+
+        The message is printed on the line below the debug message line.
+        The line number is calculated based on the number of words in the table.
+
+        Args:
+            other_msg (str): The message to be printed.
+        """
+        msg_line = 4 + 3 * self.number
+
+        rewrite_lines(msg_line, msg_line, [other_msg])
+
+    def print_debug(self, debug: str):
+        """
+        Print a debug message on the console if debug mode is enabled.
+
+        The message is displayed in red and is formatted with a debug prefix.
+        It is printed on a specific line depending on the current number of words.
+
+        Args:
+            debug (str): The debug message to be printed.
+        """
+        if config.DEBUG:
+            debug_line = 5 + 3 * self.number
+
+            rewrite_lines(debug_line, debug_line, [f"{Fore.RED}[DEBUG]{Fore.RESET} " + debug])
 
     @staticmethod
     def __build_rows(arr: list[dict[str, str]]):
@@ -64,9 +122,9 @@ class UI:
 
         Each word is represented in a three-row format using box-drawing characters.
         The structure is as follows:
-            ┌─┐
-            │A│
-            └─┘
+            ┌───┐
+            │ A │
+            └───┘
 
         Args:
             arr (list[dict[str, str]]): A list of dictionaries, where each dictionary
@@ -76,21 +134,32 @@ class UI:
             list[str]: A list of three strings, representing the top, middle, and bottom
             rows of the word's visual representation.
         """
-        top = ''.join([list(item.values())[0] + "┌─┐" for item in arr])
-        mid = ''.join([f"{list(item.values())[0]}│{list(item.keys())[0]}│" for item in arr])
-        bottom = ''.join([list(item.values())[0] + "└─┘" for item in arr])
+        top = ''.join([list(item.values())[0] + "┌───┐" for item in arr])
+        mid = ''.join([f"{list(item.values())[0]}│ {list(item.keys())[0]} │" for item in arr])
+        bottom = ''.join([list(item.values())[0] + "└───┘" for item in arr])
 
         return [top, mid, bottom]
 
-    def __get_empty_words(self, count: int):
+    def __rewrite_table(self, row:int, content:list[dict[str, str]]):
+        # Depending on the style of the output, three lines count as one line. So the beginning of a line is 3n - 2,
+        # and since the first line is empty, you need to add 1.
         """
-        Create a specified number of empty words (boxes with default color).
+        Rewrite a table row at a given position with new content.
+
+        The table structure is as follows:
+            1. Empty line
+            2. Top of the box
+            3. Middle of the box
+            4. Bottom of the box
+            5. Empty line
 
         Args:
-            count (int): The number of empty words to create.
+            row (int): The row number to rewrite, starting from 1.
+            content (list[dict[str, str]]): The new content of the row, where each dictionary
+            contains a character as the key and its corresponding color as the value.
 
         Returns:
-            list: A list of empty words represented as lists of dictionaries with space as the value.
+            None
         """
-        # Each empty word consists of 'self.length' empty box placeholders
-        return [[{" ": Fore.RESET} for _ in range(self.length)] for _ in range(count)]
+        line = 3 * row - 1
+        rewrite_lines(line, line + 2, self.__build_rows(content))
