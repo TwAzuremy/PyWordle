@@ -90,4 +90,4 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://license/) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/TwAzuremy/PyWordle/blob/master/LICENSE) file for details.
