@@ -4,11 +4,13 @@ import config
 
 init(autoreset=True)
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
 
     return parser.parse_args()
+
 
 if __name__ == '__main__':
     args = parse_args()
@@ -36,34 +38,36 @@ if __name__ == '__main__':
                 length = int(input("Enter the length of the word > "))
 
             current_word = game.start(length)
+            ui.set_information("Start the game.")
+            ui.set_other_msg(f"{Fore.CYAN}[Command]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - exit the game.")
+            ui.set_debug(f"The current word is {Fore.GREEN + current_word + Fore.RESET}")
 
             if current_word is None:
                 continue
 
             # Build the UI
             ui.set_word_length(length)
-            ui.build_empty_table(f"Start the game.",
-                                 f"{Fore.CYAN}[Command]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - exit the game.")
-
-            # debug: Get the current word.
-            ui.print_debug(f"The current word is {Fore.GREEN + current_word + Fore.RESET}")
 
             # Start the game
             while game.get_opportunity() > 0 and game.get_is_win() is False:
-                word = game.input()
+                ui.render()
+                word = ui.input("Enter a word > ")
 
                 # Instruction processing
                 if word == "/exit":
                     break
 
+                # Check the correctness of the words.
                 result = game.check(word)
 
                 # Exception handling
                 if result == 404:
-                    ui.print_info(f"The word {Fore.RED}is not{Fore.RESET} in the {Fore.RED}word list{Fore.RESET}.")
+                    ui.set_information(f"{Fore.RED}'{word}'{Fore.RESET} does {Fore.RED}not exist{Fore.RESET} "
+                                       f"in the word list.")
                     continue
                 elif result == 416:
-                    ui.print_info(f"The word {Fore.RED}must be the same length{Fore.RESET} as the current word.")
+                    ui.set_information(f"The string you entered {Fore.RED}is not{Fore.RESET} "
+                                       f"the correct length of {Fore.RED}'{word}'{Fore.RESET}.")
                     continue
 
                 # If the word is correct, add .
@@ -72,7 +76,8 @@ if __name__ == '__main__':
                     ui.insert(result)
 
             # Game over
+            ui.render()
             if game.get_is_win():
-                ui.print_info(f"{Fore.GREEN}You won the game!{Fore.RESET} The word was '{current_word}'.")
+                print(f"\n{Fore.GREEN}You won the game!{Fore.RESET} The word was '{current_word}'.\n")
             else:
-                ui.print_info(f"{Fore.RED}You lost the game.{Fore.RESET} The word was '{current_word}'.")
+                print(f"\n{Fore.RED}You lost the game.{Fore.RESET} The word was '{current_word}'.\n")

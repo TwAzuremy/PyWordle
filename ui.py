@@ -1,5 +1,5 @@
 from colorama import *
-from utils import clear_console, rewrite_lines
+from utils import clear_console
 
 import config
 
@@ -8,6 +8,10 @@ class UI:
     words = []
     length = 0
     number = 0
+
+    information = ""
+    other_msg = ""
+    debug = ""
 
     def set_word_length(self, length: int):
         """
@@ -43,77 +47,50 @@ class UI:
         """
         if len(word) == self.length:
             self.words.append(word)
-            self.__rewrite_table(len(self.words), word)
 
-    def build_empty_table(self, info: str, other_msg: str):
+    @staticmethod
+    def input(placeholder: str):
+        return input(placeholder)
+
+    def render(self):
         """
-        Constructs and displays an empty table structure on the console.
+        Renders the current state of the game.
 
-        This function clears the console and generates a visual representation
-        of an empty table based on the specified word length. Each "cell" of
-        the table is represented by a box-drawing character. It also prints
-        additional informational and other messages below the table.
-
-        Args:
-            info (str): The informational message to display after the table.
-            other_msg (str): An additional message to display after the informational
-                             message.
+        This function displays the current state of the game by calling
+        `__build_table` and printing the information and other messages.
+        If the `DEBUG` flag is set to `True`, it also prints the debug message.
         """
         clear_console()
-        empty_words = [[{" ": Fore.RESET} for _ in range(self.length)] for _ in range(self.number)]
+
+        self.__build_table()
+
+        # Print information
+        print(f"\n{Fore.CYAN}[INFO]{Fore.RESET} {self.information}")
+        print(self.other_msg)
+
+        if config.DEBUG:
+            print(f"{Fore.RED}[DEBUG]{Fore.RESET} {self.debug}")
+        else:
+            print()
+
+    def set_information(self, msg: str):
+        self.information = msg
+
+    def set_other_msg(self, msg: str):
+        self.other_msg = msg
+
+    def set_debug(self, msg: str):
+        self.debug = msg
+
+    def __build_table(self):
+        empty_words = [[{" ": Fore.RESET} for _ in range(self.length)]
+                       for _ in range(self.number - len(self.words))]
 
         print()
-        for word in empty_words:
+        for word in self.words + empty_words:
             rows = self.__build_rows(word)
             for row in rows:
                 print(row)
-
-        print(f"\n{Fore.CYAN}[INFO]{Fore.RESET} " + info)
-        print(f"{other_msg}")
-        print(f"{Fore.RED}[DEBUG]{Fore.RESET} " + f"Debug mode is {config.DEBUG}")
-
-    def print_info(self, info: str):
-        """
-        Prints an information message on a specific line on the console.
-
-        The message is printed on the line below the debug message line.
-        The line number is calculated based on the number of words in the table.
-
-        Args:
-            info (str): The message to be printed.
-        """
-        info_line = 3 + 3 * self.number
-
-        rewrite_lines(info_line, info_line, [f"{Fore.CYAN}[INFO]{Fore.RESET} " + info])
-
-    def print_other_msg(self, other_msg: str):
-        """
-        Prints a message on a specific line on the console.
-
-        The message is printed on the line below the debug message line.
-        The line number is calculated based on the number of words in the table.
-
-        Args:
-            other_msg (str): The message to be printed.
-        """
-        msg_line = 4 + 3 * self.number
-
-        rewrite_lines(msg_line, msg_line, [other_msg])
-
-    def print_debug(self, debug: str):
-        """
-        Print a debug message on the console if debug mode is enabled.
-
-        The message is displayed in red and is formatted with a debug prefix.
-        It is printed on a specific line depending on the current number of words.
-
-        Args:
-            debug (str): The debug message to be printed.
-        """
-        if config.DEBUG:
-            debug_line = 5 + 3 * self.number
-
-            rewrite_lines(debug_line, debug_line, [f"{Fore.RED}[DEBUG]{Fore.RESET} " + debug])
 
     @staticmethod
     def __build_rows(arr: list[dict[str, str]]):
@@ -139,27 +116,3 @@ class UI:
         bottom = ''.join([list(item.values())[0] + "└───┘" for item in arr])
 
         return [top, mid, bottom]
-
-    def __rewrite_table(self, row:int, content:list[dict[str, str]]):
-        # Depending on the style of the output, three lines count as one line. So the beginning of a line is 3n - 2,
-        # and since the first line is empty, you need to add 1.
-        """
-        Rewrite a table row at a given position with new content.
-
-        The table structure is as follows:
-            1. Empty line
-            2. Top of the box
-            3. Middle of the box
-            4. Bottom of the box
-            5. Empty line
-
-        Args:
-            row (int): The row number to rewrite, starting from 1.
-            content (list[dict[str, str]]): The new content of the row, where each dictionary
-            contains a character as the key and its corresponding color as the value.
-
-        Returns:
-            None
-        """
-        line = 3 * row - 1
-        rewrite_lines(line, line + 2, self.__build_rows(content))

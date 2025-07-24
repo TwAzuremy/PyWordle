@@ -1,5 +1,4 @@
 from colorama import *
-from utils import *
 
 import random
 
@@ -112,23 +111,6 @@ class Wordle:
                 result[i] = {word[i].upper(): Fore.RED}
 
         return result
-
-    @staticmethod
-    def input():
-        """
-        Prompts the user to enter a word, save the current cursor position, clears the current line, and then restores the cursor position.
-
-        This function is used for getting user input in the middle of the console without messing up the console layout.
-
-        Returns:
-            str: The word that the user entered (in lowercase).
-        """
-        save_cursor_position()
-        word = input("Enter a word > ").lower()
-        clear_current_line()
-        restore_cursor_position()
-
-        return word
 
     def __game_init(self, length: int):
         if length < self.min_length or length > self.max_length:
