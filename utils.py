@@ -1,9 +1,5 @@
 import os
 
-from blessed import Terminal
-
-term = Terminal()
-
 
 def clear_console():
     """
