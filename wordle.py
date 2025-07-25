@@ -148,78 +148,163 @@ class Wordle:
     def get_tip(self):
         word_length = len(self.current_word)
 
-        # If not guess history, return a random word that meets the length requirements.
+        # If no guess history, return a random word that meets the length requirements
         if not self.guess_history:
             return random.choice(self.word_list[word_length])
 
-        # Analyze the guessed vocabulary to gain known information.
-        confirmed_letters = {}  # Letters determine the position {position: letter}
-        excluded_letters = set()  # Excluded letters
-        possible_letters = set()  # Possible letters included
-        wrong_positions = {}  # Letters cannot be in the designated positions. {letter: [position list]}
+        # Analyze all guesses to build comprehensive constraints
+        constraints = self._build_constraints()
+        
+        # Filter candidates and score them
+        candidates_with_scores = []
+        for word in self.word_list[word_length]:
+            if word in self.guess_history:
+                continue  # Skip already guessed words
+
+            if self._is_valid_candidate(word, constraints):
+                score = self._calculate_word_score(word, constraints)
+                candidates_with_scores.append((word, score))
+
+        if not candidates_with_scores:
+            # Fallback: return any unguessed word
+            remaining_words = [w for w in self.word_list[word_length] if w not in self.guess_history]
+            return random.choice(remaining_words) if remaining_words else random.choice(self.word_list[word_length])
+
+        # Sort by score (higher is better) and return top candidate with some randomness
+        candidates_with_scores.sort(key=lambda x: x[1], reverse=True)
+        
+        # Take top 20% of candidates to add some variety
+        top_count = max(1, len(candidates_with_scores) // 5)
+        top_candidates = [word for word, _ in candidates_with_scores[:top_count]]
+        
+        return random.choice(top_candidates)
+
+    def _build_constraints(self):
+        """Build comprehensive constraints from all guess history"""
+        constraints = {
+            'confirmed_positions': {},  # {position: letter}
+            'required_letters': set(),  # Letters that must be in the word
+            'forbidden_letters': set(),  # Letters that cannot be in the word
+            'wrong_positions': {},  # {letter: set of forbidden positions}
+            'letter_counts': {},  # {letter: {'min': int, 'max': int}}
+        }
 
         for guess in self.guess_history:
             result = self._analyze_guess(guess)
+            self._update_constraints_from_guess(constraints, guess, result)
 
-            for i, (letter, color) in enumerate(result):
-                if color == Fore.GREEN:
-                    confirmed_letters[i] = letter
-                elif color == Fore.YELLOW:
-                    possible_letters.add(letter)
-                    if letter not in wrong_positions:
-                        wrong_positions[letter] = []
-                    wrong_positions[letter].append(i)
-                elif color == Fore.RED:
-                    excluded_letters.add(letter)
+        return constraints
 
-        # Select the words that meet the criteria from the word list
-        candidates = []
-        for word in self.word_list[word_length]:
-            if word in self.guess_history:
-                continue  # Skip the words that have already been guessed
+    def _update_constraints_from_guess(self, constraints, guess, result):
+        """Update constraints based on a single guess result"""
+        letter_feedback = {}  # Track feedback for each letter in this guess
+        
+        # First pass: collect all feedback for each letter
+        for i, (letter, color) in enumerate(result):
+            if letter not in letter_feedback:
+                letter_feedback[letter] = {'positions': [], 'colors': []}
+            letter_feedback[letter]['positions'].append(i)
+            letter_feedback[letter]['colors'].append(color)
 
-            is_valid = True
+        # Second pass: update constraints based on complete letter feedback
+        for letter, feedback in letter_feedback.items():
+            green_positions = [pos for pos, color in zip(feedback['positions'], feedback['colors']) if color == Fore.GREEN]
+            yellow_positions = [pos for pos, color in zip(feedback['positions'], feedback['colors']) if color == Fore.YELLOW]
+            red_positions = [pos for pos, color in zip(feedback['positions'], feedback['colors']) if color == Fore.RED]
 
-            # Check and confirm the letter of the position
-            for pos, letter in confirmed_letters.items():
-                if word[pos] != letter:
-                    is_valid = False
-                    break
+            # Handle green letters (confirmed positions)
+            for pos in green_positions:
+                constraints['confirmed_positions'][pos] = letter
+                constraints['required_letters'].add(letter)
 
-            if not is_valid:
-                continue
+            # Handle yellow letters (wrong positions but letter exists)
+            if yellow_positions:
+                constraints['required_letters'].add(letter)
+                if letter not in constraints['wrong_positions']:
+                    constraints['wrong_positions'][letter] = set()
+                constraints['wrong_positions'][letter].update(yellow_positions)
 
-            # Check if it contains possible letters and not in wrong positions
-            word_letters = set(word)
-            if not possible_letters.issubset(word_letters):
-                is_valid = False
+            # Handle red letters (more complex logic)
+            if red_positions and not green_positions and not yellow_positions:
+                # Letter is completely absent
+                constraints['forbidden_letters'].add(letter)
+            elif red_positions:
+                # Letter exists but not in these red positions
+                if letter not in constraints['wrong_positions']:
+                    constraints['wrong_positions'][letter] = set()
+                constraints['wrong_positions'][letter].update(red_positions)
 
-            # Check that yellow letters are not in wrong positions
-            for letter, positions in wrong_positions.items():
-                for pos in positions:
-                    if word[pos] == letter:
-                        is_valid = False
-                        break
-                if not is_valid:
-                    break
+            # Update letter count constraints
+            total_occurrences = len([pos for pos, color in zip(feedback['positions'], feedback['colors']) 
+                                   if color in [Fore.GREEN, Fore.YELLOW]])
+            
+            if total_occurrences > 0:
+                if letter not in constraints['letter_counts']:
+                    constraints['letter_counts'][letter] = {'min': 0, 'max': float('inf')}
+                constraints['letter_counts'][letter]['min'] = max(
+                    constraints['letter_counts'][letter]['min'], total_occurrences
+                )
+            
+            # If we see red positions for a letter that also has green/yellow, 
+            # it means the letter appears exactly as many times as green+yellow
+            if red_positions and (green_positions or yellow_positions):
+                if letter not in constraints['letter_counts']:
+                    constraints['letter_counts'][letter] = {'min': 0, 'max': float('inf')}
+                constraints['letter_counts'][letter]['max'] = total_occurrences
 
-            # Check if it contains excluded letters
-            if word_letters.intersection(excluded_letters):
-                is_valid = False
+    def _is_valid_candidate(self, word, constraints):
+        """Check if a word satisfies all constraints"""
+        # Check confirmed positions
+        for pos, letter in constraints['confirmed_positions'].items():
+            if word[pos] != letter:
+                return False
 
-            if is_valid:
-                candidates.append(word)
+        # Check required letters
+        word_letters = set(word)
+        if not constraints['required_letters'].issubset(word_letters):
+            return False
 
-        # If no qualifying candidates are found, return a random word
-        if not candidates:
-            remaining_words = [w for w in self.word_list[word_length] if w not in self.guess_history]
-            if remaining_words:
-                return random.choice(remaining_words)
-            else:
-                return random.choice(self.word_list[word_length])
+        # Check forbidden letters
+        if word_letters.intersection(constraints['forbidden_letters']):
+            return False
 
-        # Return a random one from the candidates
-        return random.choice(candidates)
+        # Check wrong positions
+        for letter, forbidden_positions in constraints['wrong_positions'].items():
+            for pos in forbidden_positions:
+                if pos < len(word) and word[pos] == letter:
+                    return False
+
+        # Check letter count constraints
+        for letter, count_constraint in constraints['letter_counts'].items():
+            actual_count = word.count(letter)
+            if actual_count < count_constraint['min'] or actual_count > count_constraint['max']:
+                return False
+
+        return True
+
+    def _calculate_word_score(self, word, constraints):
+        """Calculate a score for how good a candidate word is"""
+        score = 0
+        
+        # Prefer words with common letters in remaining positions
+        common_letters = 'ETAOINSHRDLCUMWFGYPBVKJXQZ'
+        for i, letter in enumerate(word):
+            if i not in constraints['confirmed_positions']:
+                # Score based on letter frequency (higher for more common letters)
+                letter_score = (26 - common_letters.index(letter)) if letter in common_letters else 1
+                score += letter_score
+
+        # Bonus for words that use more different letters (better information gain)
+        unique_letters = len(set(word))
+        score += unique_letters * 10
+
+        # Penalty for letters we already know are wrong in other positions
+        for letter, wrong_positions in constraints['wrong_positions'].items():
+            if letter in word:
+                # Small penalty for using letters we know have position constraints
+                score -= len(wrong_positions) * 2
+
+        return score
 
     def _analyze_guess(self, guess):
         """
