@@ -38,12 +38,12 @@ if __name__ == '__main__':
                 length = int(input("Enter the length of the word > "))
 
             current_word = game.start(length)
-
+            
             if current_word is None:
                 continue
-
+            
             ui.set_information("Start the game.")
-            ui.set_other_msg(f"{Fore.CYAN}[Command]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - exit the game.")
+            ui.set_other_msg(f"{Fore.CYAN}[Command]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - exit the game, {Fore.YELLOW}/hint{Fore.RESET} - get a hint.")
             ui.set_debug(f"The current word is {Fore.GREEN + current_word + Fore.RESET}")
 
             # Build the UI
@@ -57,6 +57,10 @@ if __name__ == '__main__':
                 # Instruction processing
                 if word == "/exit":
                     break
+                elif word == "/hint":
+                    tip_word = game.get_tip()
+                    ui.set_information(f"{Fore.YELLOW}Hint:{Fore.RESET} Try the word '{Fore.CYAN}{tip_word.lower()}{Fore.RESET}'")
+                    continue
 
                 # Check the correctness of the words.
                 result = game.check(word)
