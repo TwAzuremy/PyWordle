@@ -12,6 +12,14 @@ class UI:
     information = ""
     other_msg = ""
     debug = ""
+    
+    # AI Battle mode support
+    ai_battle_mode = False
+    word_owners = []  # Track who made each guess: 'player' or 'ai'
+    
+    # Custom color definitions
+    ORANGE_COLOR = '\033[38;2;255;127;80m'  # #FF7F50 Orange
+    LIGHT_BLUE_COLOR = Fore.CYAN  # Light blue color same as INFO title
 
     def set_word_length(self, length: int):
         """
@@ -32,11 +40,20 @@ class UI:
     def get_number(self):
         return self.number
 
+    def enable_ai_battle_mode(self):
+        """Enable AI battle mode with special rendering"""
+        self.ai_battle_mode = True
+        
+    def disable_ai_battle_mode(self):
+        """Disable AI battle mode"""
+        self.ai_battle_mode = False
+
     def clear(self):
         """Clears the list of words, resetting it to an empty state."""
         self.words = []
+        self.word_owners = []
 
-    def insert(self, word: list[dict[str, str]]):
+    def insert(self, word: list[dict[str, str]], owner: str = None):
         """
         Inserts a word into the list of words if its length matches the set word length.
 
@@ -44,9 +61,12 @@ class UI:
             word (list[dict[str, str]]): A list of dictionaries representing the word,
             where each dictionary contains a character as the key and its corresponding
             color as the value.
+            owner (str): For AI battle mode, specify 'player' or 'ai'
         """
         if len(word) == self.length:
             self.words.append(word)
+            if self.ai_battle_mode:
+                self.word_owners.append(owner or 'player')
 
     @staticmethod
     def input(placeholder: str):
@@ -83,17 +103,22 @@ class UI:
         self.debug = msg
 
     def __build_table(self):
+        # Initialize all required empty rows at the beginning
         empty_words = [[{" ": Fore.RESET} for _ in range(self.length)]
                        for _ in range(self.number - len(self.words))]
+        empty_owners = ['empty'] * (self.number - len(self.words))
 
         print()
-        for word in self.words + empty_words:
-            rows = self.__build_rows(word)
+        all_words = self.words + empty_words
+        all_owners = (self.word_owners if self.ai_battle_mode else []) + empty_owners
+        
+        for i, word in enumerate(all_words):
+            owner = all_owners[i] if i < len(all_owners) else 'empty'
+            rows = self.__build_rows(word, owner)
             for row in rows:
                 print(row)
 
-    @staticmethod
-    def __build_rows(arr: list[dict[str, str]]):
+    def __build_rows(self, arr: list[dict[str, str]], owner: str = 'player'):
         """
         Build and return the visual representation of a word as a list of strings.
 
@@ -106,13 +131,32 @@ class UI:
         Args:
             arr (list[dict[str, str]]): A list of dictionaries, where each dictionary
             contains a character as the key and its corresponding color as the value.
+            owner (str): For AI battle mode, specify 'player', 'ai', or 'empty'
 
         Returns:
             list[str]: A list of three strings, representing the top, middle, and bottom
             rows of the word's visual representation.
         """
-        top = ''.join([list(item.values())[0] + "┌───┐" for item in arr])
-        mid = ''.join([f"{list(item.values())[0]}│ {list(item.keys())[0]} │" for item in arr])
-        bottom = ''.join([list(item.values())[0] + "└───┘" for item in arr])
+        # Determine box color
+        if self.ai_battle_mode and owner == 'ai':
+            box_color = self.LIGHT_BLUE_COLOR  # AI uses light blue boxes
+        elif self.ai_battle_mode and owner == 'player':
+            box_color = self.ORANGE_COLOR  # Player uses orange boxes
+        else:
+            box_color = Fore.RESET  # Default color
+        
+        # Build rows, letter colors follow original rules, box colors change based on owner
+        top = ''.join([f"{box_color}┌───┐{Fore.RESET}" for _ in arr])
+        
+        # Ensure letter colors are completely independent, reset all colors first, then apply letter colors
+        mid_parts = []
+        for item in arr:
+            letter = list(item.keys())[0]
+            letter_color = list(item.values())[0]
+            # Build: box left + space + letter color + letter + reset color + space + box right
+            mid_parts.append(f"{box_color}│{Fore.RESET} {letter_color}{letter}{Fore.RESET} {box_color}│{Fore.RESET}")
+        mid = ''.join(mid_parts)
+        
+        bottom = ''.join([f"{box_color}└───┘{Fore.RESET}" for _ in arr])
 
         return [top, mid, bottom]
