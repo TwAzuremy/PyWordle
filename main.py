@@ -38,12 +38,13 @@ if __name__ == '__main__':
                 length = int(input("Enter the length of the word > "))
 
             current_word = game.start(length)
+            
+            if current_word is None:
+                continue
+            
             ui.set_information("Start the game.")
             ui.set_other_msg(f"{Fore.CYAN}[Command]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - exit the game, {Fore.YELLOW}/hint{Fore.RESET} - get a hint.")
             ui.set_debug(f"The current word is {Fore.GREEN + current_word + Fore.RESET}")
-
-            if current_word is None:
-                continue
 
             # Build the UI
             ui.set_word_length(length)
