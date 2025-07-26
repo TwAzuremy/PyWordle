@@ -1082,9 +1082,24 @@ class AIBattle:
         player_attempts = max_attempts
         ai_attempts = max_attempts
         
+        # Initialize invalid input counter for player
+        player_invalid_count = 0
+        max_invalid_attempts = 3
+        
         while player_attempts > 0 and ai_attempts > 0:
             if player_turn:
                 # Player turn
+                remaining_invalid_attempts = max_invalid_attempts - player_invalid_count
+                
+                # Update other message with invalid input warning if needed
+                if player_invalid_count > 0:
+                    self.ui.set_other_msg(f"{Fore.CYAN}[Game Info]{Fore.RESET} "
+                                         f"{self.ui.ORANGE_COLOR}Orange{Fore.RESET}: You | "
+                                         f"{self.ui.LIGHT_BLUE_COLOR}Blue{Fore.RESET}: {ai_player.name} | "
+                                         f"First: {first_player_color}{first_player_text}{Fore.RESET}\n"
+                                         f"{Fore.CYAN}[Help]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - Quit game\n"
+                                         f"{Fore.RED}Invalid attempts [{player_invalid_count}/{max_invalid_attempts}]{Fore.RESET}")
+                
                 self.ui.set_information(f"{self.ui.ORANGE_COLOR}Orange{Fore.RESET} (You) turn - Tries left: {player_attempts}")
                 self.ui.render()
                 
@@ -1097,15 +1112,47 @@ class AIBattle:
                     result = self.wordle.check(word)
                     
                     if result == 404:
-                        self.ui.set_information(f"{Fore.RED}'{word}'{Fore.RESET} does {Fore.RED}not exist{Fore.RESET} "
-                                               f"in the word list.")
+                        player_invalid_count += 1
+                        remaining_invalid_attempts = max_invalid_attempts - player_invalid_count
+                        
+                        if player_invalid_count >= max_invalid_attempts:
+                            self.ui.set_information(f"{Fore.RED}💻 {self.ui.LIGHT_BLUE_COLOR}Blue{Fore.RESET} ({ai_player.name}) wins! "
+                                                   f"Player lost [{max_invalid_attempts}/{max_invalid_attempts}] invalid words.{Fore.RESET}")
+                            self.ui.set_other_msg("")  # Clear other messages when game ends
+                            self.ui.render()
+                            print(f"\n{Fore.RED}💻 {ai_player.name} won!{Fore.RESET} You lost due to too many invalid inputs! The word was '{current_word}'.\n")
+                            input("Press Enter to continue...")
+                            return
+                        else:
+                            self.ui.set_information(f"{Fore.RED}'{word}'{Fore.RESET} not in word list. Invalid attempts [{player_invalid_count}/{max_invalid_attempts}]")
                         self.ui.render()
                         continue
                     elif result == 416:
-                        self.ui.set_information(f"The string you entered {Fore.RED}is not{Fore.RESET} "
-                                               f"the correct length of {Fore.RED}'{word}'{Fore.RESET}.")
+                        player_invalid_count += 1
+                        remaining_invalid_attempts = max_invalid_attempts - player_invalid_count
+                        
+                        if player_invalid_count >= max_invalid_attempts:
+                            self.ui.set_information(f"{Fore.RED}💻 {self.ui.LIGHT_BLUE_COLOR}Blue{Fore.RESET} ({ai_player.name}) wins! "
+                                                   f"Player lost [{max_invalid_attempts}/{max_invalid_attempts}] invalid words.{Fore.RESET}")
+                            self.ui.set_other_msg("")  # Clear other messages when game ends
+                            self.ui.render()
+                            print(f"\n{Fore.RED}💻 {ai_player.name} won!{Fore.RESET} You lost due to too many invalid inputs! The word was '{current_word}'.\n")
+                            input("Press Enter to continue...")
+                            return
+                        else:
+                            self.ui.set_information(f"Wrong length '{Fore.RED}{word}{Fore.RESET}'. Invalid attempts [{player_invalid_count}/{max_invalid_attempts}]")
                         self.ui.render()
                         continue
+                    
+                    # Reset invalid input counter on valid input
+                    player_invalid_count = 0
+                    
+                    # Reset other message to original state when valid input is entered
+                    self.ui.set_other_msg(f"{Fore.CYAN}[Game Info]{Fore.RESET} "
+                                         f"{self.ui.ORANGE_COLOR}Orange{Fore.RESET}: You | "
+                                         f"{self.ui.LIGHT_BLUE_COLOR}Blue{Fore.RESET}: {ai_player.name} | "
+                                         f"First: {first_player_color}{first_player_text}{Fore.RESET}\n"
+                                         f"{Fore.CYAN}[Help]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - Quit game")
                     
                     break
                 
@@ -1118,6 +1165,7 @@ class AIBattle:
                 # Check if player wins
                 if self.wordle.get_is_win():
                     self.ui.set_information(f"{Fore.GREEN}🎉 {self.ui.ORANGE_COLOR}Orange{Fore.RESET} (You) wins!{Fore.RESET}")
+                    self.ui.set_other_msg("")  # Clear other messages when game ends
                     self.ui.render()
                     print(f"\n{Fore.GREEN}You won!{Fore.RESET} The word was '{current_word}'.\n")
                     input("Press Enter to continue...")
@@ -1153,6 +1201,7 @@ class AIBattle:
                 # Check if AI wins
                 if self.wordle.get_is_win():
                     self.ui.set_information(f"{self.ui.LIGHT_BLUE_COLOR}Blue{Fore.RESET} ({ai_player.name}) wins!")
+                    self.ui.set_other_msg("")  # Clear other messages when game ends
                     self.ui.render()
                     print(f"\n{Fore.RED}💻 {ai_player.name} won!{Fore.RESET} The word was '{current_word}'.\n")
                     input("Press Enter to continue...")
@@ -1169,6 +1218,7 @@ class AIBattle:
         
         # Game over, draw
         self.ui.set_information(f"{Fore.YELLOW}⚖️ Tie! No one got it right{Fore.RESET}")
+        self.ui.set_other_msg("")  # Clear other messages when game ends
         self.ui.render()
         print(f"\n{Fore.YELLOW}Tie!{Fore.RESET} The word was '{current_word}'.\n")
         input("Press Enter to continue...")

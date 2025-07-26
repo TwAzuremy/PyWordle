@@ -49,10 +49,24 @@ if __name__ == '__main__':
             # Build the UI
             ui.set_word_length(length)
 
+            # Initialize invalid input counter
+            invalid_input_count = 0
+            max_invalid_attempts = 3
+
             # Start the game
             while game.get_opportunity() > 0 and game.get_is_win() is False:
+                # Display remaining attempts and invalid input warnings
+                remaining_attempts = game.get_opportunity()
+                remaining_invalid_attempts = max_invalid_attempts - invalid_input_count
+                
+                if invalid_input_count > 0:
+                    ui.set_other_msg(f"{Fore.CYAN}[Command]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - exit the game, {Fore.YELLOW}/hint{Fore.RESET} - get a hint.\n"
+                                     f"{Fore.RED}Invalid attempts [{invalid_input_count}/{max_invalid_attempts}]{Fore.RESET}")
+                else:
+                    ui.set_other_msg(f"{Fore.CYAN}[Command]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - exit the game, {Fore.YELLOW}/hint{Fore.RESET} - get a hint.")
+                
                 ui.render()
-                word = ui.input("Enter a word > ")
+                word = ui.input(f"Enter a word (Attempts left: {Fore.CYAN}{remaining_attempts}{Fore.RESET}) > ")
 
                 # Instruction processing
                 if word == "/exit":
@@ -67,13 +81,34 @@ if __name__ == '__main__':
 
                 # Exception handling
                 if result == 404:
-                    ui.set_information(f"{Fore.RED}'{word}'{Fore.RESET} does {Fore.RED}not exist{Fore.RESET} "
-                                       f"in the word list.")
+                    invalid_input_count += 1
+                    remaining_invalid_attempts = max_invalid_attempts - invalid_input_count
+                    
+                    if invalid_input_count >= max_invalid_attempts:
+                        ui.set_information(f"{Fore.RED}GAME OVER!{Fore.RESET} Too many invalid words [{max_invalid_attempts}/{max_invalid_attempts}].")
+                        ui.set_other_msg("")  # Clear other messages when game ends
+                        ui.render()
+                        print(f"\n{Fore.RED}You lost the game due to too many invalid inputs!{Fore.RESET} The word was '{current_word}'.\n")
+                        break
+                    else:
+                        ui.set_information(f"{Fore.RED}'{word}'{Fore.RESET} not in word list. Invalid attempts [{invalid_input_count}/{max_invalid_attempts}]")
                     continue
                 elif result == 416:
-                    ui.set_information(f"The string you entered {Fore.RED}is not{Fore.RESET} "
-                                       f"the correct length of {Fore.RED}'{word}'{Fore.RESET}.")
+                    invalid_input_count += 1
+                    remaining_invalid_attempts = max_invalid_attempts - invalid_input_count
+                    
+                    if invalid_input_count >= max_invalid_attempts:
+                        ui.set_information(f"{Fore.RED}GAME OVER!{Fore.RESET} Too many invalid words [{max_invalid_attempts}/{max_invalid_attempts}].")
+                        ui.set_other_msg("")  # Clear other messages when game ends
+                        ui.render()
+                        print(f"\n{Fore.RED}You lost the game due to too many invalid inputs!{Fore.RESET} The word was '{current_word}'.\n")
+                        break
+                    else:
+                        ui.set_information(f"Wrong length '{Fore.RED}{word}{Fore.RESET}'. Invalid attempts [{invalid_input_count}/{max_invalid_attempts}]")
                     continue
+
+                # Reset invalid input counter on valid input
+                invalid_input_count = 0
 
                 # If the word is correct, add .
                 if result is not None:
@@ -81,8 +116,9 @@ if __name__ == '__main__':
                     ui.insert(result)
 
             # Game over
+            ui.set_other_msg("")  # Clear other messages when game ends normally
             ui.render()
             if game.get_is_win():
                 print(f"\n{Fore.GREEN}You won the game!{Fore.RESET} The word was '{current_word}'.\n")
-            else:
+            elif invalid_input_count < max_invalid_attempts:  # Only show this if not lost due to invalid inputs
                 print(f"\n{Fore.RED}You lost the game.{Fore.RESET} The word was '{current_word}'.\n")
