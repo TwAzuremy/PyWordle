@@ -1,6 +1,7 @@
 from colorama import *
-
+from collections import Counter
 import random
+import math
 
 
 class Wordle:
@@ -146,38 +147,245 @@ class Wordle:
         return self.current_word
 
     def get_tip(self):
+        """Get intelligent hint using adaptive strategy based on game state"""
         word_length = len(self.current_word)
 
-        # If no guess history, return a random word that meets the length requirements
+        # If no guess history, use intermediate AI's max info word strategy
         if not self.guess_history:
-            return random.choice(self.word_list[word_length])
+            return self._get_max_info_word_hint(word_length)
 
-        # Analyze all guesses to build comprehensive constraints
+        # Use intermediate AI's reasoning approach
         constraints = self._build_constraints()
+        candidates = self._get_valid_candidates_hint(word_length, constraints)
         
-        # Filter candidates and score them
-        candidates_with_scores = []
-        for word in self.word_list[word_length]:
-            if word in self.guess_history:
-                continue  # Skip already guessed words
-
-            if self._is_valid_candidate(word, constraints):
-                score = self._calculate_word_score(word, constraints)
-                candidates_with_scores.append((word, score))
-
-        if not candidates_with_scores:
+        if not candidates:
             # Fallback: return any unguessed word
             remaining_words = [w for w in self.word_list[word_length] if w not in self.guess_history]
             return random.choice(remaining_words) if remaining_words else random.choice(self.word_list[word_length])
 
-        # Sort by score (higher is better) and return top candidate with some randomness
-        candidates_with_scores.sort(key=lambda x: x[1], reverse=True)
+        # Adaptive strategy based on game state
+        remaining_attempts = max(1, (word_length + 1) - len(self.guess_history))
+        candidate_count = len(candidates)
         
-        # Take top 20% of candidates to add some variety
-        top_count = max(1, len(candidates_with_scores) // 5)
-        top_candidates = [word for word, _ in candidates_with_scores[:top_count]]
+        # 改进的策略决策逻辑
+        if candidate_count <= 2:
+            # 只有1-2个候选词时，直接选择最可能的答案
+            return self._get_best_answer_candidate_hint(candidates)
+        elif remaining_attempts <= 1:
+            # 最后一次机会，选择最可能的答案
+            return self._get_best_answer_candidate_hint(candidates)
+        elif candidate_count <= 6 and remaining_attempts <= 2:
+            # 候选词较少且尝试次数不多时，优先选择答案候选词
+            return self._get_best_answer_candidate_hint(candidates)
+        else:
+            # 其他情况优先考虑信息增益，以获得最大信息量
+            info_gain_word = self._get_max_info_gain_word_hint(candidates, word_length)
+            
+            # 如果信息增益推荐的词就是候选词之一，直接返回
+            if info_gain_word in candidates:
+                return info_gain_word
+            
+            # 否则在信息增益和答案候选词之间做权衡
+            if candidate_count <= 10 and remaining_attempts >= 3:
+                # 候选词不多且还有足够尝试次数时，70%选择信息增益，30%选择答案候选词
+                if random.random() < 0.7:
+                    return info_gain_word
+                else:
+                    return self._get_best_answer_candidate_hint(candidates)
+            else:
+                # 默认选择信息增益最大的词
+                return info_gain_word
+
+    def _get_max_info_word_hint(self, word_length):
+        """Get word with maximum information value (from Intermediate AI)"""
+        # Calculate letter frequency for this word length
+        letter_frequency = Counter()
+        for word in self.word_list[word_length]:
+            letter_frequency.update(word)
         
-        return random.choice(top_candidates)
+        # Select words with most common and non-repeating letters
+        best_word = None
+        best_score = -1
+        
+        for word in self.word_list[word_length]:
+            if len(set(word)) == len(word):  # No repeat letters
+                score = sum(letter_frequency[letter] for letter in word)
+                if score > best_score:
+                    best_score = score
+                    best_word = word
+        
+        return best_word if best_word else random.choice(self.word_list[word_length])
+
+    def _get_valid_candidates_hint(self, word_length, constraints):
+        """Get all valid candidate words using intermediate AI logic"""
+        candidates = []
+        for word in self.word_list[word_length]:
+            if word in self.guess_history:
+                continue
+            if self._is_valid_candidate_hint(word, constraints):
+                candidates.append(word)
+        return candidates
+
+    def _is_valid_candidate_hint(self, word, constraints):
+        """Advanced candidate validation (from Intermediate AI)"""
+        # Check confirmed positions
+        for pos, letter in constraints['confirmed_positions'].items():
+            if word[pos] != letter:
+                return False
+        
+        # Check required letters
+        word_letters = set(word)
+        if not constraints['required_letters'].issubset(word_letters):
+            return False
+        
+        # Check forbidden letters
+        if word_letters.intersection(constraints['forbidden_letters']):
+            return False
+        
+        # Check wrong positions
+        for letter, forbidden_positions in constraints['wrong_positions'].items():
+            for pos in forbidden_positions:
+                if pos < len(word) and word[pos] == letter:
+                    return False
+        
+        # Letter count validations
+        for letter, count_constraint in constraints['letter_counts'].items():
+            actual_count = word.count(letter)
+            min_count = count_constraint.get('min', 0)
+            max_count = count_constraint.get('max', float('inf'))
+            if actual_count < min_count or actual_count > max_count:
+                return False
+        
+        return True
+
+    def _get_max_info_gain_word_hint(self, candidates, word_length):
+        """Select word with maximum information gain (from Intermediate AI)"""
+        # 移除候选词数量限制，即使候选词很少也要计算信息增益
+        
+        # Calculate letter frequency for scoring
+        letter_frequency = Counter()
+        for word in self.word_list[word_length]:
+            letter_frequency.update(word)
+        
+        # Improved information gain calculation
+        best_word = None
+        best_score = -1
+        
+        # 扩大测试范围，提高推荐质量
+        test_words = self.word_list[word_length]
+        test_limit = min(200, len(test_words))  # 增加到200个单词
+        
+        for test_word in test_words[:test_limit]:
+            if test_word in self.guess_history:
+                continue
+            
+            score = self._calculate_info_gain_hint(test_word, candidates)
+            
+            # 给候选词额外加分，但不完全偏向候选词
+            if test_word in candidates:
+                score += 0.1  # 小幅加分
+            
+            if score > best_score:
+                best_score = score
+                best_word = test_word
+        
+        return best_word if best_word else random.choice(candidates)
+
+    def _calculate_info_gain_hint(self, test_word, candidates):
+        """Calculate information gain (improved version)"""
+        # Simulate this word's partition of the candidate set
+        pattern_groups = {}
+        
+        # 使用所有候选词进行计算，不再限制数量
+        for candidate in candidates:
+            pattern = self._get_pattern_hint(test_word, candidate)
+            pattern_key = str(pattern)
+            if pattern_key not in pattern_groups:
+                pattern_groups[pattern_key] = 0
+            pattern_groups[pattern_key] += 1
+        
+        # Calculate entropy (information gain)
+        total = sum(pattern_groups.values())
+        if total == 0:
+            return 0
+            
+        entropy = 0
+        for count in pattern_groups.values():
+            if count > 0:
+                p = count / total
+                entropy -= p * math.log2(p)
+        
+        # 额外考虑分组的均匀性 - 更均匀的分组意味着更好的信息增益
+        group_count = len(pattern_groups)
+        if group_count > 1:
+            # 奖励能产生更多不同模式的单词
+            entropy += math.log2(group_count) * 0.1
+        
+        return entropy
+
+    def _get_pattern_hint(self, guess, target):
+        """Get pattern of guess word against target word"""
+        pattern = []
+        target_chars = list(target)
+        
+        # First pass: mark exact matches
+        for i in range(len(guess)):
+            if guess[i] == target[i]:
+                pattern.append('G')  # Green
+                target_chars[i] = None
+            else:
+                pattern.append('?')
+        
+        # Second pass: mark partial matches
+        for i in range(len(guess)):
+            if pattern[i] == '?':
+                if guess[i] in target_chars:
+                    pattern[i] = 'Y'  # Yellow
+                    target_chars[target_chars.index(guess[i])] = None
+                else:
+                    pattern[i] = 'R'  # Red
+        
+        return pattern
+
+    def _get_best_answer_candidate_hint(self, candidates):
+        """Select most likely answer candidate (from Intermediate AI)"""
+        # Calculate letter frequency for scoring
+        letter_frequency = Counter()
+        for length_words in self.word_list.values():
+            for word in length_words:
+                letter_frequency.update(word)
+        
+        # Based on letter frequency and position probability
+        scored_candidates = []
+        for word in candidates:
+            score = self._calculate_answer_score_hint(word, letter_frequency)
+            scored_candidates.append((word, score))
+        
+        scored_candidates.sort(key=lambda x: x[1], reverse=True)
+        return scored_candidates[0][0]
+
+    def _calculate_answer_score_hint(self, word, letter_frequency):
+        """Calculate answer score"""
+        score = 0
+        
+        # Letter frequency score
+        for letter in word:
+            score += letter_frequency.get(letter, 0)
+        
+        # Build constraints for scoring
+        constraints = self._build_constraints()
+        
+        # Position score (confirmed position letters get high score)
+        for pos, letter in constraints['confirmed_positions'].items():
+            if pos < len(word) and word[pos] == letter:
+                score += 100
+        
+        # Score for containing required letters
+        for letter in constraints['required_letters']:
+            if letter in word:
+                score += 50
+        
+        return score
 
     def _build_constraints(self):
         """Build comprehensive constraints from all guess history"""
