@@ -167,23 +167,34 @@ class Wordle:
         remaining_attempts = max(1, (word_length + 1) - len(self.guess_history))
         candidate_count = len(candidates)
         
-        # Strategy decision logic
-        if candidate_count <= 3:
-            # Very few candidates left - always suggest most likely answer
+        # 改进的策略决策逻辑
+        if candidate_count <= 2:
+            # 只有1-2个候选词时，直接选择最可能的答案
             return self._get_best_answer_candidate_hint(candidates)
-        elif remaining_attempts <= 2:
-            # Critical situation - prioritize answer candidates
+        elif remaining_attempts <= 1:
+            # 最后一次机会，选择最可能的答案
             return self._get_best_answer_candidate_hint(candidates)
-        elif candidate_count <= 8 and remaining_attempts >= 3:
-            # Moderate candidates with enough attempts - mixed strategy
-            # 70% chance for answer candidate, 30% for info gain
-            if random.random() < 0.7:
-                return self._get_best_answer_candidate_hint(candidates)
-            else:
-                return self._get_max_info_gain_word_hint(candidates, word_length)
+        elif candidate_count <= 6 and remaining_attempts <= 2:
+            # 候选词较少且尝试次数不多时，优先选择答案候选词
+            return self._get_best_answer_candidate_hint(candidates)
         else:
-            # Many candidates remaining - prioritize information gain
-            return self._get_max_info_gain_word_hint(candidates, word_length)
+            # 其他情况优先考虑信息增益，以获得最大信息量
+            info_gain_word = self._get_max_info_gain_word_hint(candidates, word_length)
+            
+            # 如果信息增益推荐的词就是候选词之一，直接返回
+            if info_gain_word in candidates:
+                return info_gain_word
+            
+            # 否则在信息增益和答案候选词之间做权衡
+            if candidate_count <= 10 and remaining_attempts >= 3:
+                # 候选词不多且还有足够尝试次数时，70%选择信息增益，30%选择答案候选词
+                if random.random() < 0.7:
+                    return info_gain_word
+                else:
+                    return self._get_best_answer_candidate_hint(candidates)
+            else:
+                # 默认选择信息增益最大的词
+                return info_gain_word
 
     def _get_max_info_word_hint(self, word_length):
         """Get word with maximum information value (from Intermediate AI)"""
@@ -249,26 +260,31 @@ class Wordle:
 
     def _get_max_info_gain_word_hint(self, candidates, word_length):
         """Select word with maximum information gain (from Intermediate AI)"""
-        if len(candidates) <= 5:
-            return random.choice(candidates)
+        # 移除候选词数量限制，即使候选词很少也要计算信息增益
         
         # Calculate letter frequency for scoring
         letter_frequency = Counter()
         for word in self.word_list[word_length]:
             letter_frequency.update(word)
         
-        # Simplified information gain calculation
+        # Improved information gain calculation
         best_word = None
         best_score = -1
         
-        # Test words from all available words, not limited to candidates only
+        # 扩大测试范围，提高推荐质量
         test_words = self.word_list[word_length]
+        test_limit = min(200, len(test_words))  # 增加到200个单词
         
-        for test_word in test_words[:min(50, len(test_words))]:  # Limit computation
+        for test_word in test_words[:test_limit]:
             if test_word in self.guess_history:
                 continue
             
             score = self._calculate_info_gain_hint(test_word, candidates)
+            
+            # 给候选词额外加分，但不完全偏向候选词
+            if test_word in candidates:
+                score += 0.1  # 小幅加分
+            
             if score > best_score:
                 best_score = score
                 best_word = test_word
@@ -276,18 +292,19 @@ class Wordle:
         return best_word if best_word else random.choice(candidates)
 
     def _calculate_info_gain_hint(self, test_word, candidates):
-        """Calculate information gain (simplified version from Intermediate AI)"""
+        """Calculate information gain (improved version)"""
         # Simulate this word's partition of the candidate set
         pattern_groups = {}
         
-        for candidate in candidates[:min(20, len(candidates))]:  # Limit computation
+        # 使用所有候选词进行计算，不再限制数量
+        for candidate in candidates:
             pattern = self._get_pattern_hint(test_word, candidate)
             pattern_key = str(pattern)
             if pattern_key not in pattern_groups:
                 pattern_groups[pattern_key] = 0
             pattern_groups[pattern_key] += 1
         
-        # Calculate entropy
+        # Calculate entropy (information gain)
         total = sum(pattern_groups.values())
         if total == 0:
             return 0
@@ -297,6 +314,12 @@ class Wordle:
             if count > 0:
                 p = count / total
                 entropy -= p * math.log2(p)
+        
+        # 额外考虑分组的均匀性 - 更均匀的分组意味着更好的信息增益
+        group_count = len(pattern_groups)
+        if group_count > 1:
+            # 奖励能产生更多不同模式的单词
+            entropy += math.log2(group_count) * 0.1
         
         return entropy
 
