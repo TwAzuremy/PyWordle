@@ -138,25 +138,40 @@ class UI:
             rows of the word's visual representation.
         """
         # Determine box color
-        if self.ai_battle_mode and owner == 'ai':
-            box_color = self.LIGHT_BLUE_COLOR  # AI uses light blue boxes
-        elif self.ai_battle_mode and owner == 'player':
-            box_color = self.ORANGE_COLOR  # Player uses orange boxes
+        if self.ai_battle_mode:
+            # AI Battle mode: use fixed colors based on owner
+            if owner == 'ai':
+                box_color = self.LIGHT_BLUE_COLOR  # AI uses light blue boxes
+            elif owner == 'player':
+                box_color = self.ORANGE_COLOR  # Player uses orange boxes
+            else:
+                box_color = Fore.WHITE  # Empty slots use white
         else:
-            box_color = Fore.RESET  # Default color
+            # Main game mode: box color follows letter color, empty slots are white
+            box_color = Fore.WHITE  # Default to white for empty slots
         
-        # Build rows, letter colors follow original rules, box colors change based on owner
-        top = ''.join([f"{box_color}┌───┐{Fore.RESET}" for _ in arr])
-        
-        # Ensure letter colors are completely independent, reset all colors first, then apply letter colors
+        # Build rows
+        top_parts = []
         mid_parts = []
+        bottom_parts = []
+        
         for item in arr:
             letter = list(item.keys())[0]
             letter_color = list(item.values())[0]
-            # Build: box left + space + letter color + letter + reset color + space + box right
-            mid_parts.append(f"{box_color}│{Fore.RESET} {letter_color}{letter}{Fore.RESET} {box_color}│{Fore.RESET}")
-        mid = ''.join(mid_parts)
+            
+            # In main game mode, if letter has color (not empty), box follows letter color
+            if not self.ai_battle_mode and letter.strip() and letter_color != Fore.RESET:
+                current_box_color = letter_color
+            else:
+                current_box_color = box_color
+            
+            # Build each part
+            top_parts.append(f"{current_box_color}┌───┐{Fore.RESET}")
+            mid_parts.append(f"{current_box_color}│{Fore.RESET} {letter_color}{letter}{Fore.RESET} {current_box_color}│{Fore.RESET}")
+            bottom_parts.append(f"{current_box_color}└───┘{Fore.RESET}")
         
-        bottom = ''.join([f"{box_color}└───┘{Fore.RESET}" for _ in arr])
+        top = ''.join(top_parts)
+        mid = ''.join(mid_parts)
+        bottom = ''.join(bottom_parts)
 
         return [top, mid, bottom]
