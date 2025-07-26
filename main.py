@@ -66,7 +66,7 @@ if __name__ == '__main__':
                     ui.set_other_msg(f"{Fore.CYAN}[Command]{Fore.RESET} {Fore.RED}/exit{Fore.RESET} - exit the game, {Fore.YELLOW}/hint{Fore.RESET} - get a hint.")
                 
                 ui.render()
-                word = ui.input(f"Enter a word (Attempts left: {Fore.CYAN}{remaining_attempts}{Fore.RESET}) > ")
+                word = ui.input("Enter a word > ")
 
                 # Instruction processing
                 if word == "/exit":
@@ -74,6 +74,11 @@ if __name__ == '__main__':
                 elif word == "/hint":
                     tip_word = game.get_tip()
                     ui.set_information(f"{Fore.YELLOW}Hint:{Fore.RESET} Try the word '{Fore.CYAN}{tip_word.lower()}{Fore.RESET}'")
+                    continue
+
+                # Check for duplicate input first
+                if word.upper() in game.guess_history:
+                    ui.set_information(f"{Fore.YELLOW}'{word}'{Fore.RESET} already guessed. Please try a different word.")
                     continue
 
                 # Check the correctness of the words.
@@ -109,6 +114,9 @@ if __name__ == '__main__':
 
                 # Reset invalid input counter on valid input
                 invalid_input_count = 0
+                
+                # Clear previous error messages when valid input is entered
+                ui.set_information("Please enter a word.")
 
                 # If the word is correct, add .
                 if result is not None:

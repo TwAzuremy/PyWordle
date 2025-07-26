@@ -1104,10 +1104,16 @@ class AIBattle:
                 self.ui.render()
                 
                 while True:
-                    word = self.ui.input(f"Your guess ({word_length} letters) > ")
+                    word = self.ui.input("Your guess > ")
                     
                     if word == "/exit":
                         return
+                    
+                    # Check for duplicate input first
+                    if word.upper() in self.wordle.guess_history:
+                        self.ui.set_information(f"{Fore.YELLOW}'{word}'{Fore.RESET} already guessed. Please try a different word.")
+                        self.ui.render()
+                        continue
                     
                     result = self.wordle.check(word)
                     
@@ -1146,6 +1152,9 @@ class AIBattle:
                     
                     # Reset invalid input counter on valid input
                     player_invalid_count = 0
+                    
+                    # Clear previous error messages when valid input is entered
+                    self.ui.set_information(f"{self.ui.ORANGE_COLOR}Orange{Fore.RESET} (You) turn - Tries left: {player_attempts}")
                     
                     # Reset other message to original state when valid input is entered
                     self.ui.set_other_msg(f"{Fore.CYAN}[Game Info]{Fore.RESET} "
