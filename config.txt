@@ -1,0 +1,3 @@
+MIN_WORD_LENGTH = 3
+DEBUG = False
+LANGUAGE = en_us

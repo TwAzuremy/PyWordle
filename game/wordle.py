@@ -1,8 +1,8 @@
-import config.config as config
 import random
 
 from colorama import Fore
 from error import LengthNotExist, LetterNotExist
+from config.config import config
 
 
 class Wordle:
@@ -40,7 +40,7 @@ class Wordle:
             for line in f:
                 word = line.strip()
 
-                if len(word) >= config.MIN_WORD_LENGTH and word.isalpha():
+                if len(word) >= config.get("MIN_WORD_LENGTH", 3) and word.isalpha():
                     self.__word_list.setdefault(len(word), []).append(word)
                     count += 1
 
