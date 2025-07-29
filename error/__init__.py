@@ -1,0 +1,2 @@
+from .length_not_exist import LengthNotExist
+from .letter_not_exist import LetterNotExist
