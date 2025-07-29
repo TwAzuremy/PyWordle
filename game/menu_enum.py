@@ -35,11 +35,6 @@ class MenuEnum(Enum):
 
     OPTIONS_LANGUAGE = [
         {
-            'name': 'English',
-            'description': 'Select the language',
-            'func': lambda: '#language'
-        },
-        {
             'name': 'Return',
             'description': 'Return last menu',
             'func': lambda: '#options'

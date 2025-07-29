@@ -27,9 +27,11 @@ class GameController:
                 case '#start':
                     self.__state = self.__render_form
                 case '#options':
-                    self.__state = lambda: self.__render_options(MenuEnum.OPTIONS_MENU, 0)
+                    self.__state = lambda: self.__render_options(MenuEnum.OPTIONS_MENU.value, 0)
                 case '#language':
-                    self.__state = lambda: self.__render_options(MenuEnum.OPTIONS_LANGUAGE, 0)
+                    self.__state = lambda: self.__render_options(
+                        lang.build_option_menu() + MenuEnum.OPTIONS_LANGUAGE.value, lang.find_key_index()
+                    )
                 case '/exit':
                     print("\n\n")
                     break
@@ -48,11 +50,10 @@ class GameController:
 
         return index
 
-    def __render_options(self, menu: MenuEnum, selected: int = 0):
-        value = menu.value
-        result = self.ui.render_menu(value, 1, selected)
+    def __render_options(self, menu: list, selected: int = 0):
+        result = self.ui.render_menu(menu, 1, selected)
 
-        index = value[result]['func']()
+        index = menu[result]['func']()
 
         if index == -1:
             return None
