@@ -60,7 +60,7 @@ class UI:
         # │        options         │ Menu length Number of intervals.
         # └────────────────────────┘
         banner_offset = (2 + len(menu) + (len(menu) - 1) * gap) // 2
-        after_banner_end_line = self.render_center_xy(self.__banner, 0, banner_offset * -1, False)
+        after_banner_end_line = self.render_center_xy(self.__banner, 0, banner_offset * -1, True, False)
 
         # Locate the 'hotkey tip' line based on the end line.
         self.render_center_x(self.hotkey_tip, after_banner_end_line + 1, 0, False)
@@ -71,22 +71,23 @@ class UI:
 
         on_enter = lambda index: (self.__tc.write_lines(options_start_line,
                                                         self.__build_options(options, gap, index),
-                                                        options_start_line + len(menu))
+                                                        options_start_line + len(menu) + (len(menu) - 1) * gap)
                                   .flush())
 
         return KeyHandler.register_menu(term, options, 0, on_enter)
 
-    def render_menu(self, menu: list, gap: int = 1) -> int:
-        menu_text = [item['name'] for item in menu]
-        menu_height = menu_text + [] * (len(menu) - 1) * gap
-        start_line = self.render_center_xy(menu_height, 0, 0)
+    def render_menu(self, menu: list, gap: int = 1, selected: int = 0) -> int:
+        clear_screen()
+
+        options = [item['name'] for item in menu]
+        start_line = self.render_center_xy(options, 0, gap * -1, False, False)
 
         on_enter = lambda index: (self.__tc.write_lines(start_line,
-                                                        self.__build_options(menu, gap),
-                                                        start_line + len(menu))
+                                                        self.__build_options(options, gap, index),
+                                                        start_line + len(menu) + (len(menu) - 1) * gap)
                                   .flush())
 
-        return KeyHandler.register_menu(term, menu_text, 0, on_enter)
+        return KeyHandler.register_menu(term, options, selected, on_enter)
 
     def __build_options(self, options: list[str], gap: int = 0, selected: int = 0) -> list[str]:
         buffer = []
@@ -106,13 +107,15 @@ class UI:
 
         return buffer
 
-    def render_center_xy(self, content: list[str], offset_x: int = 0, offset_y: int = 0, flush: bool = True) -> int:
+    def render_center_xy(self, content: list[str], offset_x: int = 0, offset_y: int = 0, render: bool = True,
+                         flush: bool = True) -> int:
         start_line = (self.__lines - len(content)) // 2 + offset_y
 
         max_length = max((visible_length(line) for line in content), default=0)
         fill_space = (self.__columns - max_length) // 2 + offset_x
 
-        self.__tc.write_lines(start_line, [" " * fill_space + line for line in content], start_line + len(content))
+        if render:
+            self.__tc.write_lines(start_line, [" " * fill_space + line for line in content], start_line + len(content))
 
         if flush:
             self.__tc.flush()
