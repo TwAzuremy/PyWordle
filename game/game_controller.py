@@ -8,6 +8,7 @@ from game.wordle import Wordle
 from utils.utils import hotkey_style
 from error import LengthNotExist, LetterNotExist
 from .menu_enum import *
+from lang.language import lang
 
 
 class GameController:
