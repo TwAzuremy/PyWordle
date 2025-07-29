@@ -23,6 +23,8 @@ class KeyHandler:
                         on_enter(current_selected)
                     elif key == "KEY_ENTER" or key == "\n" or key == "\r":
                         return current_selected
+                    elif key == "KEY_ESCAPE" or key == "\x1b":
+                        return current_selected
         finally:
             term.normal_cursor()
 
