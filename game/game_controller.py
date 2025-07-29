@@ -7,6 +7,7 @@ from ui.ui import UI
 from game.wordle import Wordle
 from utils.utils import hotkey_style
 from error import LengthNotExist, LetterNotExist
+from .menu_enum import *
 
 
 class GameController:
@@ -41,11 +42,23 @@ class GameController:
                 break
 
     def __render_cover(self) -> any:
-        self.ui.hotkey_tip = f"Press {hotkey_style('↑↓')} to select, {hotkey_style('enter')} to confirm"
-        option_result = self.ui.render_cover(self.__cover_menu, 1)
+        menu = MenuEnum.COVER_MENU.value
+
+        self.ui.hotkey_tip = f"Press {hotkey_style('↑↓')} to select, {hotkey_style('enter')} to confirm, {hotkey_style('Esc')} to return."
+        option_result = self.ui.render_cover(menu, 1)
 
         # Run the selected option.
-        return self.__cover_menu[option_result]['func']()
+        return menu[option_result]['func']()
+
+    def __render_options(self) -> any:
+        menu = MenuEnum.COVER_MENU.value
+
+        option_result = self.ui.render_menu(MenuEnum.OPTIONS_MENU.value, 1)
+
+        return menu[option_result]['func']()
+
+    def __render_language(self) -> any:
+        pass
 
     def __render_form(self) -> None:
         self.ui.clear_screen()

@@ -46,7 +46,7 @@ class UI:
     def clear_screen() -> None:
         clear_screen()
 
-    def render_cover(self, menu: list, menu_gap: int = 1) -> int:
+    def render_cover(self, menu: list, gap: int = 1) -> int:
         clear_screen()
 
         # The structure is as follows:
@@ -59,7 +59,7 @@ class UI:
         # ┌────────────────────────┐
         # │        options         │ Menu length Number of intervals.
         # └────────────────────────┘
-        banner_offset = (2 + len(menu) + (len(menu) - 1) * menu_gap) // 2
+        banner_offset = (2 + len(menu) + (len(menu) - 1) * gap) // 2
         after_banner_end_line = self.render_center_xy(self.__banner, 0, banner_offset * -1, False)
 
         # Locate the 'hotkey tip' line based on the end line.
@@ -69,11 +69,24 @@ class UI:
         options_start_line = after_banner_end_line + 3
         options = [item['name'] for item in menu]
 
-        on_enter = lambda index: self.__tc.write_lines(options_start_line,
-                                                       self.__build_options(options, menu_gap, index),
-                                                       options_start_line + len(menu)).flush()
+        on_enter = lambda index: (self.__tc.write_lines(options_start_line,
+                                                        self.__build_options(options, gap, index),
+                                                        options_start_line + len(menu))
+                                  .flush())
 
         return KeyHandler.register_menu(term, options, 0, on_enter)
+
+    def render_menu(self, menu: list, gap: int = 1) -> int:
+        menu_text = [item['name'] for item in menu]
+        menu_height = menu_text + [] * (len(menu) - 1) * gap
+        start_line = self.render_center_xy(menu_height, 0, 0)
+
+        on_enter = lambda index: (self.__tc.write_lines(start_line,
+                                                        self.__build_options(menu, gap),
+                                                        start_line + len(menu))
+                                  .flush())
+
+        return KeyHandler.register_menu(term, menu_text, 0, on_enter)
 
     def __build_options(self, options: list[str], gap: int = 0, selected: int = 0) -> list[str]:
         buffer = []
