@@ -27,9 +27,9 @@ class MenuEnum(Enum):
             'func': lambda: '#language'
         },
         {
-            'name': 'Exit',
-            'description': 'Exit the game',
-            'func': lambda: '/exit'
+            'name': 'Return',
+            'description': 'Return last menu',
+            'func': lambda: '#cover'
         }
     ]
 
@@ -40,8 +40,8 @@ class MenuEnum(Enum):
             'func': lambda: '#language'
         },
         {
-            'name': 'Exit',
-            'description': 'Exit the game',
-            'func': lambda: '/exit'
+            'name': 'Return',
+            'description': 'Return last menu',
+            'func': lambda: '#options'
         }
     ]

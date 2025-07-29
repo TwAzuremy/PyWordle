@@ -11,19 +11,6 @@ from .menu_enum import *
 
 
 class GameController:
-    __cover_menu = [
-        {
-            'name': 'Start',
-            'description': 'Start a new game',
-            'func': lambda: '#start'
-        },
-        {
-            'name': 'Exit',
-            'description': 'Exit the game',
-            'func': lambda: '/exit'
-        }
-    ]
-
     def __init__(self):
         self.ui = UI()
         self.ui.set_banner("banner.txt")
@@ -34,31 +21,43 @@ class GameController:
         while True:
             command = self.__state()
 
-            if command == '#start':
-                self.__state = self.__render_form
-
-            if command == '/exit':
-                print("\n\n")
-                break
+            match command:
+                case '#cover':
+                    self.__state = self.__render_cover
+                case '#start':
+                    self.__state = self.__render_form
+                case '#options':
+                    self.__state = lambda: self.__render_options(MenuEnum.OPTIONS_MENU, 0)
+                case '#language':
+                    self.__state = lambda: self.__render_options(MenuEnum.OPTIONS_LANGUAGE, 0)
+                case '/exit':
+                    print("\n\n")
+                    break
 
     def __render_cover(self) -> any:
         menu = MenuEnum.COVER_MENU.value
 
-        self.ui.hotkey_tip = f"Press {hotkey_style('↑↓')} to select, {hotkey_style('enter')} to confirm, {hotkey_style('Esc')} to return."
+        self.ui.hotkey_tip = f"Press {hotkey_style('↑↓')} to select, {hotkey_style('enter')} to confirm, {hotkey_style('Esc')} to back."
         option_result = self.ui.render_cover(menu, 1)
 
         # Run the selected option.
-        return menu[option_result]['func']()
+        index = menu[option_result]['func']()
 
-    def __render_options(self) -> any:
-        menu = MenuEnum.COVER_MENU.value
+        if index == -1:
+            return '/exit'
 
-        option_result = self.ui.render_menu(MenuEnum.OPTIONS_MENU.value, 1)
+        return index
 
-        return menu[option_result]['func']()
+    def __render_options(self, menu: MenuEnum, selected: int = 0):
+        value = menu.value
+        result = self.ui.render_menu(value, 1, selected)
 
-    def __render_language(self) -> any:
-        pass
+        index = value[result]['func']()
+
+        if index == -1:
+            return None
+
+        return index
 
     def __render_form(self) -> None:
         self.ui.clear_screen()

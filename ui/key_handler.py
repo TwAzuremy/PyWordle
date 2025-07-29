@@ -24,7 +24,7 @@ class KeyHandler:
                     elif key == "KEY_ENTER" or key == "\n" or key == "\r":
                         return current_selected
                     elif key == "KEY_ESCAPE" or key == "\x1b":
-                        return current_selected
+                        return -1
         finally:
             term.normal_cursor()
 
