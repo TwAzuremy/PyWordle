@@ -4,6 +4,7 @@ import sys
 
 from colorama import Fore
 from ui.font_style import italic
+from wcwidth import wcswidth
 
 
 def clear_screen() -> None:
@@ -19,9 +20,23 @@ def clear_screen() -> None:
 
 
 def visible_length(text: str) -> int:
-    ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+    """
+    Calculates the visible length of a string, accounting for the removal of ANSI escape sequences
+    and considering the display width of full-width characters (e.g., Chinese characters).
 
-    return len(ansi_escape.sub('', text))
+    This function removes any ANSI escape sequences and calculates the length of the string based
+    on its visible width, which is useful for text formatting in terminals that support ANSI sequences.
+
+    :param text: The input string containing potential ANSI escape sequences and characters.
+    :return: The visible length of the string, considering the display width of each character.
+    """
+    # Remove ANSI escape sequences (keep the original regular expression)
+    ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+    clean_text = ansi_escape.sub('', text)
+
+    # Use wcswidth to calculate the display width (handling full-width characters like Chinese characters)
+    return wcswidth(clean_text)
+
 
 
 def hotkey_style(text: str) -> str:
