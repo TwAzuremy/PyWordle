@@ -97,7 +97,7 @@ class UI:
             prefix = f"> " if i == selected else ""
             line = prefix + option
 
-            fill_space = (self.__columns - visible_length(line)) // 2
+            fill_space = (self.__columns - visible_length(line) - len(prefix)) // 2
 
             centered_line = (Fore.GREEN if i == selected else "") + (" " * fill_space + line) + Fore.RESET
             buffer.append(centered_line)
