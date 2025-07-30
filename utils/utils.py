@@ -206,3 +206,26 @@ def load_key_value_file(file_path: str) -> dict:
 
     return result
 
+
+def format_string(template, *args) -> str:
+    """
+    Formats a string by replacing placeholders '{}' with the provided arguments.
+
+    This function splits the template string by '{}' placeholders and inserts
+    the corresponding arguments in the specified positions.
+
+    :param template: The template string containing '{}' placeholders to be replaced.
+    :param args: The arguments to be inserted into the placeholders.
+    :return: The formatted string with the placeholders replaced by the provided arguments.
+    :raises ValueError: If the number of placeholders doesn't match the number of provided arguments.
+    """
+    parts = iter(template.split('{}'))
+    result = next(parts, "")
+    for part, arg in zip(parts, args):
+        result += str(arg) + part
+
+    # Check if the number of placeholders and arguments match
+    if len(list(parts)) > 0 or len(args) > len(template.split('{}')) - 1:
+        raise ValueError("Placeholder count doesn't match argument count")
+
+    return result

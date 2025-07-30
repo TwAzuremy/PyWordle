@@ -5,7 +5,7 @@ from colorama import Fore
 
 from ui.ui import UI
 from game.wordle import Wordle
-from utils.utils import hotkey_style
+from utils.utils import *
 from error import LengthNotExist, LetterNotExist
 from .menu_enum import *
 from lang.language import lang
@@ -28,19 +28,20 @@ class GameController:
                 case '#start':
                     self.__state = self.__render_form
                 case '#options':
-                    self.__state = lambda: self.__render_options(MenuEnum.OPTIONS_MENU.value, 0)
+                    self.__state = lambda: self.__render_options(MenuEnum.options_menu(), 0)
                 case '#language':
                     self.__state = lambda: self.__render_options(
-                        lang.build_option_menu() + MenuEnum.OPTIONS_LANGUAGE.value, lang.find_key_index()
+                        lang.build_option_menu() + MenuEnum.options_language_menu(), lang.find_key_index()
                     )
                 case '/exit':
                     print("\n\n")
                     break
 
     def __render_cover(self) -> any:
-        menu = MenuEnum.COVER_MENU.value
+        menu = MenuEnum.cover_menu()
 
-        self.ui.hotkey_tip = f"Press {hotkey_style('↑↓')} to select, {hotkey_style('enter')} to confirm, {hotkey_style('Esc')} to back."
+        self.ui.hotkey_tip = format_string(lang.get("cover.hotkey.tip"), hotkey_style('↑↓'), hotkey_style('enter'),
+                                           hotkey_style('esc'))
         option_result = self.ui.render_cover(menu, 1)
 
         # Run the selected option.
@@ -63,12 +64,12 @@ class GameController:
 
     def __render_form(self) -> None:
         self.ui.clear_screen()
-        title = "Enter─the─word─length"
+        title = lang.get("form.title")
 
         while True:
             string = self.ui.input(
                 title,
-                f"Press {hotkey_style('Esc')} to return to the menu, {hotkey_style('Enter')} to confirm.",
+                format_string(lang.get("form.hotkey.tip"), hotkey_style('esc'), hotkey_style('enter')),
                 "",
                 None,
                 exit_on_esc=True
@@ -97,13 +98,13 @@ class GameController:
 
         self.ui.render_game_structure(
             length,
-            f" > {Fore.YELLOW}Player{Fore.RESET}",
+            f" > {Fore.YELLOW}{lang.get('game.display.player')}{Fore.RESET}",
             "Start the game.",
             input_tip
         )
 
         while self.game.get_chance() > 0 and not self.game.get_win_status():
-            letter = self.ui.input("Input", input_tip, shortcut_tip, hotkey)
+            letter = self.ui.input(lang.get("game.input.title"), input_tip, shortcut_tip, hotkey)
 
             if letter == '/exit':
                 break
@@ -121,14 +122,17 @@ class GameController:
 
     def __render_over(self) -> None:
         hotkey, _, shortcut_tip = self.__build_game_hotkey()
-        input_tip = f"Press {hotkey_style('Esc')} to stop editing, {hotkey_style('Enter')} to return menu."
+        input_tip = format_string(lang.get("over.input.hotkey.tip"), hotkey_style('esc'), hotkey_style('enter'))
 
+        word = self.game.get_word()
         if self.game.get_win_status():
-            self.ui.set_information(f"{Fore.GREEN}You win!{Fore.RESET} The word is: {self.game.get_word()}.")
+            self.ui.set_information(
+                f"{Fore.GREEN}{lang.get('over.status.win')}{Fore.RESET} {format_string(lang.get('over.status.word'), word)}")
         else:
-            self.ui.set_information(f"{Fore.RED}You lose!{Fore.RESET} The word is: {self.game.get_word()}.")
+            self.ui.set_information(
+                f"{Fore.RED}{lang.get('over.status.lose')}{Fore.RESET} {format_string(lang.get('over.status.word'), word)}")
 
-        self.ui.input("Input", input_tip, shortcut_tip, hotkey)
+        self.ui.input(lang.get("over.input.title"), input_tip, shortcut_tip, hotkey)
         self.game.end()
 
         self.__state = self.__render_cover
@@ -139,13 +143,13 @@ class GameController:
             {
                 "key": "q",
                 "condition": lambda key: key == "q",
-                "description": "exit",
+                "description": lang.get("game.input.hotkey.exit"),
                 "func": lambda: '/exit'
             },
             {
                 "key": "↑↓",
                 "condition": lambda key: repr(key) == "KEY_UP",
-                "description": "scroll area",
+                "description": lang.get("game.input.hotkey.scroll"),
                 "func": lambda: self.ui.scroll_display_area('up', 2)
             },
             {
@@ -160,14 +164,15 @@ class GameController:
             hotkey.append({
                 "key": "g",
                 "condition": lambda key: key == "g",
-                "description": "get the word",
-                "func": lambda: self.ui.set_information(f"The word for the current game is: "
-                                                        f"{Fore.GREEN}{self.game.get_word()}.", "debug")
+                "description": lang.get("debug.game.input.hotkey.get_word"),
+                "func": lambda: self.ui.set_information(
+                    format_string(lang.get("debug.game.information.get_word"), f"{Fore.GREEN}{self.game.get_word()}"),
+                    "debug")
             })
 
-        tip_1 = f"Press {hotkey_style('Esc')} to stop editing, {hotkey_style('Enter')} to confirm."
-        tip_2 = (f"Press "
-                 + f"{hotkey_style('e')} to start editing, "
+        tip_1 = format_string(lang.get("game.input.hotkey.tip"), hotkey_style('esc'), hotkey_style('enter'))
+        tip_2 = (f"{lang.get('game.input.hotkey.tip.press')} "
+                 + f"{hotkey_style('e')} {lang.get('game.input.hotkey.tip.start_editing')}, "
                  + ', '.join(
                     f"{hotkey_style(hk['key'])} to {hk['description']}"
                     for hk in hotkey

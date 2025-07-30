@@ -5,9 +5,13 @@ from colorama import Fore
 
 class Language:
     __mapping = {}
+    __language = {}
+    __current = "en_us"
 
     def __init__(self, file_path: str):
         self.__load_mapping(file_path)
+        self.__current = config.get("LANGUAGE", "en_us")
+        self.load_language(f"lang/{self.__current}.txt")
 
     def __load_mapping(self, file_path: str):
         """
@@ -19,6 +23,12 @@ class Language:
         :param file_path: The path to the language configuration file.
         """
         self.__mapping = load_key_value_file(file_path)
+
+    def load_language(self, file_path: str):
+        try:
+            self.__language = load_key_value_file(file_path)
+        except FileNotFoundError:
+            self.__language = load_key_value_file("lang/en_us.txt")
 
     def find_key_index(self) -> int:
         """
@@ -54,6 +64,13 @@ class Language:
             'description': '',
             'func': lambda c=code: config.set("LANGUAGE", c, True)
         } for code, name in self.__mapping.items()]
+
+    def get(self, key: str) -> str:
+        if self.__current != config.get("LANGUAGE", "en_us"):
+            self.__current = config.get("LANGUAGE", "en_us")
+            self.load_language(f"lang/{self.__current}.txt")
+
+        return self.__language.get(key)
 
 
 lang = Language("lang_mapping.txt")

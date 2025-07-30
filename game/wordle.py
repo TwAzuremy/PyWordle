@@ -3,6 +3,8 @@ import random
 from colorama import Fore
 from error import LengthNotExist, LetterNotExist
 from config.config import config
+from lang.language import lang
+from utils.utils import *
 
 
 class Wordle:
@@ -49,10 +51,10 @@ class Wordle:
     def start(self, length: int) -> None:
         if length < self.__min_length or length > self.__max_length:
             raise LengthNotExist(
-                f"Invalid length: {length}. The length must be between {self.__min_length} and {self.__max_length}.")
+                format_string(lang.get("wordle.start.length_not_exist"), length, self.__min_length, self.__max_length))
 
         if length not in self.__word_list:
-            raise LetterNotExist(f"Invalid length: {length}. The length must be in the word list.")
+            raise LetterNotExist(format_string(lang.get("wordle.start.letter_not_exist"), length))
 
         self.__word = self.__random(length)
         self.__chance = length + 1
@@ -65,11 +67,12 @@ class Wordle:
     def check(self, word: str) -> list[dict[str, str]]:
         if len(word) != len(self.__word):
             raise LengthNotExist(
-                f"The {Fore.RED}'{word}'{Fore.RESET} you entered does not fit {Fore.GREEN}{len(self.__word)}{Fore.RESET} lengths.")
+                format_string(lang.get("wordle.check.length_not_exist"), f"{Fore.RED}{word}{Fore.RESET}",
+                              f"{Fore.GREEN}{len(self.__word)}{Fore.RESET}"))
 
         if word.upper() not in self.__word_list[len(word)]:
             raise LetterNotExist(
-                f"The {Fore.RED}'{word}'{Fore.RESET} you entered is not in the word list.")
+                format_string(lang.get("wordle.check.letter_not_exist"), f"{Fore.RED}{word}{Fore.RESET}"))
 
         result = []
         matched = [False] * len(self.__word)
