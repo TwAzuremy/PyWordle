@@ -40,21 +40,27 @@ class KeyHandler:
                 key = term.inkey(timeout=0.1)
 
                 if key == "KEY_ENTER" or key == "\n" or key == "\r":
+                    on_render(text, False)
                     break
                 elif key == "KEY_BACKSPACE" or key == "\x7f":
                     text = text[:-1]
+                    on_render(text, False)
                 elif key == "KEY_ESCAPE" or key == "\x1b":
                     if on_esc:
+                        # Adjust the input status to disable after pressing 'esc'.
                         on_render(text, True)
                         is_exit = on_esc()
 
                     if exit_on_esc or is_exit == True or is_exit == '/exit':
                         return '/exit'
 
+                    # Press esc to restore the input state after the function executed by 'esc'.
+                    on_render(text, False)
+
+                # Render the button pressed.
                 elif key.is_sequence is False and key != "":
                     text += key
-
-                on_render(text, False)
+                    on_render(text, False)
 
         return text
 
