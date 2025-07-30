@@ -86,7 +86,7 @@ class GameController:
                 self.__state = self.__render_game
                 break
             except ValueError:
-                self.ui.set_information("Invalid input please try again", "error")
+                self.ui.set_information(lang.get("form.input.invalid_input"), "error")
             except (LengthNotExist, LetterNotExist) as e:
                 self.ui.set_information(str(e), "error")
 
@@ -99,7 +99,7 @@ class GameController:
         self.ui.render_game_structure(
             length,
             f" > {Fore.YELLOW}{lang.get('game.display.player')}{Fore.RESET}",
-            "Start the game.",
+            format_string(lang.get("game.information.start"), f"{Fore.GREEN}{length}{Fore.RESET}"),
             input_tip
         )
 

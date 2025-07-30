@@ -24,3 +24,5 @@ wordle.start.length_not_exist = Invalid length: {}. The length must be between {
 wordle.start.letter_not_exist = Invalid length: {}. The length must be in the word list.
 wordle.check.length_not_exist = The {} you entered does not fit {} lengths.
 wordle.check.letter_not_exist = The {} you entered is not in the word list.
+game.information.start = The game begins, please enter a word with a length of {}.
+form.input.invalid_input = Invalid input please try again.

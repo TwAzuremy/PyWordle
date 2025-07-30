@@ -24,3 +24,5 @@ wordle.start.length_not_exist = 無效長度: {}. 長度必須在 {} 和 {}.
 wordle.start.letter_not_exist = 無效長度: {}. 單詞表不存在該長度的單詞.
 wordle.check.length_not_exist = 您輸入的 {} 不是 {} 個字母.
 wordle.check.letter_not_exist = 您輸入的 {} 不在單詞表中.
+game.information.start = 游戲開始, 請輸入長度為 {} 的單詞.
+form.input.invalid_input = 無效輸入, 請重試.
