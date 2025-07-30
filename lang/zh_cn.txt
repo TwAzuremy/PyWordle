@@ -11,6 +11,7 @@ game.input.hotkey.tip = 按 {} 暂停输入, {} 确定.
 game.input.hotkey.tip.press = 按
 game.input.hotkey.tip.start_editing = 继续输入
 over.input.hotkey.tip = 按 {} 暂停输入, {} 返回菜单
+over.input.title = 输入
 over.status.win = 你赢了!
 over.status.lose = 你输了!
 over.status.word = 单词是: {}.

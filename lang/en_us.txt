@@ -11,6 +11,7 @@ game.input.hotkey.tip = Press {} to stop editing, {} to confirm.
 game.input.hotkey.tip.press = Press
 game.input.hotkey.tip.start_editing = to start editing
 over.input.hotkey.tip = Press {} to stop editing, {} to return menu
+over.input.title = Input
 over.status.win = You win!
 over.status.lose = You lose!
 over.status.word = The word is: {}.
