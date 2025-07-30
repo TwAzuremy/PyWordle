@@ -1,8 +1,5 @@
 import config.config as config
 
-from typing import Dict
-from colorama import Fore
-
 from ui.ui import UI
 from game.wordle import Wordle
 from utils.utils import *
