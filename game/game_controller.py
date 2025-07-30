@@ -174,7 +174,7 @@ class GameController:
         tip_2 = (f"{lang.get('game.input.hotkey.tip.press')} "
                  + f"{hotkey_style('e')} {lang.get('game.input.hotkey.tip.start_editing')}, "
                  + ', '.join(
-                    f"{hotkey_style(hk['key'])} to {hk['description']}"
+                    f"{hotkey_style(hk['key'])} {hk['description']}"
                     for hk in hotkey
                     if hk['key'] != ''
                 ) + ".")
