@@ -1,4 +1,5 @@
 from config.config import config
+from utils.utils import load_key_value_file
 from colorama import Fore
 
 
@@ -17,18 +18,7 @@ class Language:
 
         :param file_path: The path to the language configuration file.
         """
-        with open(file_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                if not line.strip() or line.startswith('#'):
-                    continue
-
-                if '=' in line:
-                    parts = line.split('=', 1)
-                    code = parts[0].strip()
-                    name = parts[1].strip()
-
-                    if code and name:
-                        self.__mapping[code] = name
+        self.__mapping = load_key_value_file(file_path)
 
     def find_key_index(self) -> int:
         """

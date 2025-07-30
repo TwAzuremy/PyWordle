@@ -97,7 +97,6 @@ def render_line_numb(arr: list[str]) -> list[str]:
     return result
 
 
-
 def overwrite_with_prefix(list_a, list_b, start_index) -> list[str]:
     """
     This function overwrites elements of list_a with elements from list_b starting from the specified
@@ -163,4 +162,47 @@ def nearest_divisible_by_3(a, direction) -> int:
         return a - v + 3
     else:
         return a - v
+
+
+def load_key_value_file(file_path: str) -> dict:
+    """
+    Loads key-value pairs from a plain text file and returns them as a dictionary.
+
+    Processing rules:
+    1. Skip empty lines (including lines with only spaces).
+    2. Skip lines starting with a '#' (comment lines).
+    3. Use the first equal sign (=) as the delimiter for key-value pairs.
+    4. Automatically trims leading and trailing spaces from both keys and values.
+    5. Ignore lines where the key or value is empty.
+
+    :param file_path: The path to the text file containing key-value pairs.
+    :return: A dictionary containing the key-value pairs loaded from the file.
+    :raises FileNotFoundError: If the specified file does not exist.
+    :raises RuntimeError: If there is an error reading the file.
+    """
+    result = {}
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                # Skip empty lines and comment lines
+                stripped_line = line.strip()
+                if not stripped_line or stripped_line.startswith('#'):
+                    continue
+
+                # Split the line into key-value pairs (only the first '=' is used)
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    key = key.strip()
+                    value = value.strip()
+
+                    # Ignore invalid lines
+                    if key and value:
+                        result[key] = value
+
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File does not exist: {file_path}")
+    except Exception as e:
+        raise RuntimeError(f"Read failed: {str(e)}")
+
+    return result
 
