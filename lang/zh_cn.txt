@@ -22,5 +22,5 @@ options.menu.language = 语言
 menu.back = 返回
 wordle.start.length_not_exist = 无效长度: {}. 长度必须在 {} 和 {}.
 wordle.start.letter_not_exist = 无效长度: {}. 单词表不存在该长度的单词.
-wordle.check.length_not_exist = 您输入的 {} 不适合 {} 长度.
+wordle.check.length_not_exist = 您输入的 {} 不是 {} 个字母.
 wordle.check.letter_not_exist = 您输入的 {} 不在单词表中.
