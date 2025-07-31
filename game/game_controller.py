@@ -103,6 +103,9 @@ class GameController:
         while self.game.get_chance() > 0 and not self.game.get_win_status():
             letter = self.ui.input(lang.get("game.input.title"), input_tip, shortcut_tip, hotkey)
 
+            if letter.replace(" ", "") == '':
+                continue
+
             if letter == '/exit':
                 break
 
