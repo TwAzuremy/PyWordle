@@ -300,7 +300,7 @@ class UI:
         if direction == 'up':
             self.__intercept_point = max(0, self.__intercept_point - step)
         else:
-            max_point = len(self.__display_contents) - self.__game_display_contents_height + 1
+            max_point = len(self.__display_contents) - self.__game_display_contents_height
             self.__intercept_point = min(max_point, self.__intercept_point + step)
 
         # Update the intercept table and re-render the display
