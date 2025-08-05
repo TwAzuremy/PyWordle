@@ -1,3 +1,15 @@
+# Solve _winreg problems
+try:
+    import winreg as _winreg
+except ImportError:
+    import _winreg
+
+# Fix the StringIO issue
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 import argparse
 import colorama
 import config.config as config
