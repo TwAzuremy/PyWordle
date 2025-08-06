@@ -43,17 +43,21 @@ def visible_length(text: str) -> int:
 
 def get_resource_path(relative_path: str) -> Path:
     """
-    Returns the absolute path of a resource file by joining the given relative path with the project root.
+    Retrieves the absolute path of a resource by combining the base path and the relative path.
 
-    The project root is determined by the path of the executable running the Python script (i.e., the location of the
-    Python interpreter). This function is useful for loading resources from the project root directory.
+    The base path depends on whether the program is running in a frozen environment or not:
+    - If the program is frozen, the base path is the parent directory of the frozen executable.
+    - If the program is not frozen, the base path is the parent directory of the main Python module.
 
-    :param relative_path: The relative path to the resource file, relative to the project root.
-    :return: The absolute path to the resource file as a Path object.
+    :param relative_path: The relative path of the resource.
+    :return: The absolute path of the resource.
     """
-    project_root = Path(sys.executable).parent
+    if getattr(sys, 'frozen', False):
+        base = Path(sys.executable).parent
+    else:
+        base = Path(__file__).resolve().parent.parent
 
-    return project_root / relative_path
+    return base / relative_path
 
 
 def hotkey_style(text: str) -> str:
