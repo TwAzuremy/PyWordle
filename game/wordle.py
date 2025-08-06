@@ -14,13 +14,13 @@ class Wordle:
 
     __win_status = False
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str | Path) -> None:
         self.__process_file(file_path)
 
         self.__min_length = min(self.__word_list.keys())
         self.__max_length = max(self.__word_list.keys())
 
-    def __process_file(self, file_path: str) -> int:
+    def __process_file(self, file_path: str | Path) -> int:
         """
         Process the given file to store words of different lengths in the internal word list.
 

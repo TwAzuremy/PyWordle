@@ -38,7 +38,7 @@ class UI:
     def __init__(self) -> None:
         self.__calc_game_size()
 
-    def set_banner(self, file_path: str) -> None:
+    def set_banner(self, file_path: str | Path) -> None:
         with open(file_path, "r") as file:
             self.__banner = file.read().splitlines()
 

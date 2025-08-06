@@ -11,8 +11,8 @@ from lang.language import lang
 class GameController:
     def __init__(self):
         self.ui = UI()
-        self.ui.set_banner("banner.txt")
-        self.game = Wordle("word_list.txt")
+        self.ui.set_banner(get_resource_path(f"{RESOURCES_PATH}/banner.txt"))
+        self.game = Wordle(get_resource_path("word_list.txt"))
         self.__state = self.__render_cover
 
     def run(self):

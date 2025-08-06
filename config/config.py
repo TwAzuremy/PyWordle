@@ -1,8 +1,10 @@
 import os
 
+from utils.utils import *
+
 
 class ConfigManager:
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str | Path):
         """
         Initializes the ConfigManager with the given configuration file path.
 
@@ -117,5 +119,5 @@ class ConfigManager:
             f.writelines(self.raw_lines)
 
 
-config = ConfigManager("config.txt")
+config = ConfigManager(get_resource_path(f"{RESOURCES_PATH}/config.txt"))
 DEBUG = config.get("DEBUG", False)
