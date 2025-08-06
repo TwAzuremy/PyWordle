@@ -1,7 +1,6 @@
 import re
 import sys
 import os
-from typing import Optional
 
 from colorama import Fore
 from pathlib import Path
@@ -42,48 +41,19 @@ def visible_length(text: str) -> int:
     return wcswidth(clean_text)
 
 
-def get_base_path() -> Path:
-    """
-    Gets the base path for the current application.
-
-    The base path is either the directory containing the current script file when running
-    in a normal Python environment, or the temporary directory created by PyInstaller when
-    running in a standalone executable.
-
-    :return: The base path of the application.
-    """
-    if getattr(sys, 'frozen', False):
-        meipass: Optional[str] = getattr(sys, '_MEIPASS', None)
-        if meipass:
-            return Path(meipass)
-
-        return Path(sys.executable).parent
-    else:
-        return Path(__file__).resolve().parent
-
-
 def get_resource_path(relative_path: str) -> Path:
     """
-    Resolves the full path of a resource file, given its relative path.
+    Returns the absolute path of a resource file by joining the given relative path with the project root.
 
-    This function first attempts to locate the resource at the base path
-    of the application. If the resource does not exist at the base path,
-    it falls back to searching at the project root directory.
+    The project root is determined by the path of the executable running the Python script (i.e., the location of the
+    Python interpreter). This function is useful for loading resources from the project root directory.
 
-    :param relative_path: The relative path to the resource file.
-    :return: The resolved Path object to the resource file.
+    :param relative_path: The relative path to the resource file, relative to the project root.
+    :return: The absolute path to the resource file as a Path object.
     """
-    base_path = get_base_path()
-    resource_path = base_path / relative_path
+    project_root = Path(sys.executable).parent
 
-    if not resource_path.exists():
-        project_root = Path(__file__).resolve().parent.parent
-        fallback_path = project_root / relative_path
-
-        if fallback_path.exists():
-            return fallback_path
-
-    return resource_path
+    return project_root / relative_path
 
 
 def hotkey_style(text: str) -> str:
