@@ -52,6 +52,8 @@ python main.py --debug
 
 ## Gameplay Preview
 
+Best viewed with monospace font
+
 ```text
  > Player
    ┌───┐┌───┐┌───┐┌───┐┌───┐
